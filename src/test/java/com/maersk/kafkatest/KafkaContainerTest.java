@@ -14,7 +14,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.junit.BeforeClass;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,7 +36,8 @@ import lombok.extern.slf4j.Slf4j;
  * @author : sauravsingh
  * @created: 20/12/22.
  */
-@SpringBootTest //(properties = { "client.ping.timeout=60", "docker.client.strategy=org.testcontainers.dockerclient.UnixSocketClientProviderStrategy" })
+@SpringBootTest // (properties = { "client.ping.timeout=60",
+				// "docker.client.strategy=org.testcontainers.dockerclient.UnixSocketClientProviderStrategy" })
 @Slf4j
 public class KafkaContainerTest {
 
@@ -49,9 +49,17 @@ public class KafkaContainerTest {
 
 	static final String TOPIC = "test-topic";
 
-	@BeforeClass
-	void setup() {
-//		Startables.deepStart(Stream.of(kafkaContainer)).join();
+	private static final KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.3.1"))
+			.withEmbeddedZookeeper().withEnv("KAFKA_LISTENERS", "PLAINTEXT://0.0.0.0:9093 ,BROKER://0.0.0.0:9092")
+			.withEnv("KAFKA_LISTENER_SECURITY_PROTOCOL_MAP", "BROKER:PLAINTEXT,PLAINTEXT:PLAINTEXT")
+			.withEnv("KAFKA_INTER_BROKER_LISTENER_NAME", "BROKER").withEnv("KAFKA_BROKER_ID", "1")
+			.withEnv("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "1").withEnv("KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS", "1")
+			.withEnv("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "1").withEnv("KAFKA_TRANSACTION_STATE_LOG_MIN_ISR", "1")
+			.withEnv("KAFKA_LOG_FLUSH_INTERVAL_MESSAGES", Long.MAX_VALUE + "").withEnv("KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS", "0")
+			.withNetwork(network);
+
+	static {
+		Startables.deepStart(Stream.of(kafkaContainer)).join();
 	}
 
 	@BeforeEach
@@ -69,19 +77,6 @@ public class KafkaContainerTest {
 		consumer.close();
 	}
 
-	protected static final KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.3.1"))
-			.withEmbeddedZookeeper().withEnv("KAFKA_LISTENERS", "PLAINTEXT://0.0.0.0:9093 ,BROKER://0.0.0.0:9092")
-			.withEnv("KAFKA_LISTENER_SECURITY_PROTOCOL_MAP", "BROKER:PLAINTEXT,PLAINTEXT:PLAINTEXT")
-			.withEnv("KAFKA_INTER_BROKER_LISTENER_NAME", "BROKER").withEnv("KAFKA_BROKER_ID", "1")
-			.withEnv("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "1").withEnv("KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS", "1")
-			.withEnv("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "1").withEnv("KAFKA_TRANSACTION_STATE_LOG_MIN_ISR", "1")
-			.withEnv("KAFKA_LOG_FLUSH_INTERVAL_MESSAGES", Long.MAX_VALUE + "").withEnv("KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS", "0")
-			.withNetwork(network);
-
-//	static {
-//
-//	}
-
 	@Test
 	void testEventCreatingUserInRepo() throws ExecutionException, InterruptedException {
 		assumeTrue(kafkaContainer.isRunning());
@@ -98,7 +93,4 @@ public class KafkaContainerTest {
 		assertTrue(newUserId.equals(singleRecord.value().getUsername()));
 	}
 
-	static {
-		Startables.deepStart(Stream.of(kafkaContainer)).join();
-	}
 }

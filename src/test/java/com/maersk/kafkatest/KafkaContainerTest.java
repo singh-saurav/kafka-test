@@ -36,8 +36,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author : sauravsingh
  * @created: 20/12/22.
  */
-@SpringBootTest // (properties = { "client.ping.timeout=60",
-				// "docker.client.strategy=org.testcontainers.dockerclient.UnixSocketClientProviderStrategy" })
+@SpringBootTest
 @Slf4j
 public class KafkaContainerTest {
 
@@ -49,7 +48,7 @@ public class KafkaContainerTest {
 
 	static final String TOPIC = "test-topic";
 
-	private static final KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.3.1"))
+	protected static final KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.3.1"))
 			.withEmbeddedZookeeper().withEnv("KAFKA_LISTENERS", "PLAINTEXT://0.0.0.0:9093 ,BROKER://0.0.0.0:9092")
 			.withEnv("KAFKA_LISTENER_SECURITY_PROTOCOL_MAP", "BROKER:PLAINTEXT,PLAINTEXT:PLAINTEXT")
 			.withEnv("KAFKA_INTER_BROKER_LISTENER_NAME", "BROKER").withEnv("KAFKA_BROKER_ID", "1")
